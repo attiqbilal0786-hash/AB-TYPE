@@ -1,0 +1,278 @@
+<!doctype html>
+<!--
+  AB-TYPE
+  Single-file HTML web game (Z-Type style) — open in a browser.
+  For: Notepad++ -> Save as AB-TYPE.html -> Double-click to play.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AB-TYPE — a Z-Type style typing shooter</title>
+  <style>
+    html,body{height:100%;margin:0;background:#0b1220;color:#dfe7ff;font-family:system-ui,Segoe UI,Roboto,Arial}
+    canvas{display:block;background:linear-gradient(180deg,#071021,#081626 40%,#0b1220);width:100%;height:100%}
+    #ui{position:fixed;left:12px;top:12px;z-index:10}
+    .btn{background:#1b2330;color:#dfe7ff;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;margin-right:8px}
+    #footer{position:fixed;right:12px;bottom:12px;color:#9fb0ff;opacity:0.9;font-size:13px}
+    #mobileInput{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#fff}
+    @media(min-width:700px){#mobileInput{display:none}}
+    .hint{opacity:0.8;font-size:13px}
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <button id="startBtn" class="btn">Start / Restart</button>
+    <button id="pauseBtn" class="btn">Pause</button>
+    <span class="hint">Type letters to shoot. Backspace to cancel. Enter to pause.</span>
+    <div style="margin-top:6px;color:#9fb0ff">Score: <span id="score">0</span> &nbsp;&nbsp; Lives: <span id="lives">3</span> &nbsp;&nbsp; Level: <span id="level">1</span></div>
+  </div>
+  <canvas id="c"></canvas>
+  <input id="mobileInput" placeholder="Tap & type (mobile)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <div id="footer">AB-TYPE — A small Z-Type style game • Save as <strong>AB-TYPE.html</strong> and open in your browser</div>
+
+<script>
+// AB-TYPE — single-file typing shooter
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize(){
+    W = canvas.width = innerWidth;
+    H = canvas.height = innerHeight;
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  // UI
+  const scoreEl = document.getElementById('score');
+  const livesEl = document.getElementById('lives');
+  const levelEl = document.getElementById('level');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const mobileInput = document.getElementById('mobileInput');
+
+  // Game state
+  let running = false;
+  let paused = false;
+  let score = 0;
+  let lives = 3;
+  let level = 1;
+  let spawnInterval = 1700; // ms
+  let lastSpawn = 0;
+  let lastTime = 0;
+  let enemies = [];
+  let bullets = [];
+  let typed = ''; // current typed buffer
+  let wordList = null;
+
+  // Wordlist (short & medium words). You can replace or expand this.
+  const DEFAULT_WORDS = `able about above accept across action actor actually add address adult after again against age agency agent agree ahead air airport all allow almost alone along already also always among amount analysis announce another answer anyone anything appear apply approach area argue around arrive art article artist as ask assume at attack attention avoid away baby back bad bag ball bank base basic be beat beautiful because become bed before begin behavior behind believe benefit best better between beyond big bill billion biology bit black blood blue board body book born both box boy break bring brother budget build building business but buy by call camera campaign can cancer candidate capital car card care career carry case catch cause cell center central century certain certainly chair challenge chance change character charge check child choice choose church citizen city civil claim class clear clearly close coach cold collection college color come commercial common community company compare computer concern condition conference Congress consider consumer contain continue control cost could country court cover create crime cultural culture cup current customer cut dark data daughter day dead deal death debate decade decide decision deep defense degree Democrat democratic describe design despite detail determine develop development die difference different difficult dinner direction director discover discuss disease do doctor dog door down draw dream drive drop drug during each early east easy eat economic economy edge education effect effort eight either election else employee end energy enjoy enough enter entire environment environmental especially establish even evening event ever every everyone everything evidence exactly example executive exist expect experience expert explain eye face fact factor fail fall family far fast father fear federal feel feeling field fight figure file final finally financial find fine finger finish fire firm first fish five floor fly focus follow food foot for force foreign forget form former forward four free friend from front full fund future game garden gas general generation get girl give glass go goal good government great green ground group grow growth guess gun guy hair half hand hang happen happy hard have he head health hear heart heat heavy help her here herself high him himself his history hit hold home hope hospital hot hotel hour house how however huge human hundred husband idea identify if image imagine impact important improve in include including increase indeed indicate individual industry information inside instead institution interest interesting international interview into invest involve issue it item its itself job join just keep key kid kill kind kitchen know knowledge land language large last late later laugh law lawyer lay lead learn least leave left leg legal less let letter level lie life light like likely line list listen little live local long look lose loss lot love low machine magazine main maintain major majority make man manage management manager many market marriage material matter may maybe me mean measure media medical meet meeting member memory mention message method middle might military million mind minute miss mission model modern moment money month more morning most mother mouth move movement movie Mr Mrs much music must my myself name nearly need network never new news newspaper next nice night no none nor north not note nothing notice now n't number occur of off offer office officer official often oh oil ok old on once one only onto open operation opportunity option or order organization other others our out outside over own owner page pain painting paper parent part participant particular particularly partner party pass past patient pattern pay peace people per perform period perform perhaps person personal phone physical pick picture piece place plan plant play player PM point police policy political politician poor popular population position positive possible power practice prepare present president pressure pretty prevent price private probably problem process produce product production professional professor program project property protect prove provide public pull purpose push put quality question quickly quite race radio raise range rate rather reach read ready real reality realize remain remember remove report represent require research resource respond response responsibility rest result return reveal rich right rise risk road rock role room rule run safe same save say scale school science scientist score sea season seat second section security see seek seem sell send senior sense series serious serve service set seven several sex sexual shake share she shoot short should shoulder show side sign significant similar simple since sing single sister sit site situation size skill skin small social society some someone something sometimes son song soon sort sound source south space speak special specific speech spend sport spring staff stage stand standard star start state statement station stay stop store story strategy street strong strong student study stuff style subject success successful such suddenly suffer suggest summer support sure system table take talk task team technology television tell ten tend term test than thank that the their them themselves then theory there these they thing think third this those though thought thousand threat three through throughout throw thus time to today together tonight too top total tough toward town trade traditional training travel treat tree trial trip trouble truck true truth try turn TV two type under understand unit until up upon us use usually value various very victim view violence visit voice vote wait walk wall want war watch water way we wear week weight well west what whatever when where whether which while white who whole whom whose why wide wife will win wind window wish with within without woman wonder word work worker world worry would write writer wrong yard yeah year yes yet you young your yourself`.split(/\s+/);
+
+  function pickWord(){
+    // Choose length based on level (higher level -> longer words)
+    const lvl = Math.min(level, 12);
+    const minLen = Math.max(2, Math.floor(2 + lvl/2));
+    const maxLen = Math.max(minLen, Math.floor(3 + lvl + Math.random()*3));
+    let tries=0;
+    while(tries<200){
+      const w = DEFAULT_WORDS[Math.floor(Math.random()*DEFAULT_WORDS.length)];
+      if(w.length>=minLen && w.length<=maxLen) return w.toUpperCase();
+      tries++;
+    }
+    return 'TYPE';
+  }
+
+  // Enemy object
+  class Enemy{
+    constructor(word){
+      this.word = word;
+      this.x = Math.random()*(W-160)+80;
+      this.y = -30 - Math.random()*120;
+      this.speed = 20 + Math.random()*20 + level*4; // pixels per sec
+      this.progress = 0; // typed characters count
+      this.dead = false;
+      this.size = Math.max(14, Math.min(28, 12 + this.word.length));
+      this.color = '#cfe1ff';
+    }
+    update(dt){
+      this.y += this.speed * dt;
+    }
+    draw(ctx){
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.textAlign = 'center';
+      ctx.font = `${this.size}px monospace`;
+      // shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillText(this.word, 2, 2);
+      // draw typed part
+      ctx.fillStyle = '#7fffd4';
+      ctx.fillText(this.word.slice(0,this.progress), 0, 0);
+      // remaining
+      ctx.fillStyle = this.color;
+      ctx.fillText(this.word.slice(this.progress), 0, 0);
+      ctx.restore();
+    }
+    nextChar(){ return this.word.charAt(this.progress); }
+  }
+
+  // Bullet (visual) - for flair
+  class Bullet{
+    constructor(x,y,tx,ty){ this.x=x;this.y=y;this.tx=tx;this.ty=ty;this.speed=700;this.dead=false; const dx=tx-x,dy=ty-y; const m=Math.hypot(dx,dy)||1; this.vx=(dx/m)*this.speed; this.vy=(dy/m)*this.speed; }
+    update(dt){ this.x += this.vx*dt; this.y += this.vy*dt; if(Math.hypot(this.x-this.tx,this.y-this.ty)<8) this.dead=true; }
+    draw(ctx){ ctx.beginPath(); ctx.arc(this.x,this.y,3,0,Math.PI*2); ctx.fillStyle='#9ff'; ctx.fill(); }
+  }
+
+  // Audio helpers (tiny beeps)
+  const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  function beep(f=600,d=0.06,vol=0.05){ try{ const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=f; g.gain.value=vol; o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d); o.stop(audioCtx.currentTime+d+0.02);}catch(e){}
+  }
+
+  // Spawn enemies
+  function spawn(){ enemies.push(new Enemy(pickWord())); }
+
+  function resetGame(){ score=0; lives=3; level=1; spawnInterval=1700; enemies=[]; bullets=[]; typed=''; lastSpawn=0; updateUI(); }
+
+  function updateUI(){ scoreEl.textContent = score; livesEl.textContent = lives; levelEl.textContent = level; }
+
+  function gameOver(){ running=false; paused=false; // show overlay
+    ctx.save(); ctx.fillStyle='rgba(2,6,10,0.75)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='48px sans-serif'; ctx.fillText('GAME OVER',W/2,H/2-40);
+    ctx.font='20px sans-serif'; ctx.fillText('Score: '+score,W/2,H/2+4);
+    ctx.font='16px sans-serif'; ctx.fillText('Click Start to play again',W/2,H/2+36);
+    ctx.restore();
+    localStorage.setItem('abtype_highscore', Math.max(score, Number(localStorage.getItem('abtype_highscore')||0)));
+  }
+
+  function advanceLevelIfNeeded(){
+    // increase level by score thresholds
+    const newLevel = 1 + Math.floor(score/200);
+    if(newLevel !== level){ level = newLevel; spawnInterval = Math.max(500, 1700 - (level-1)*100); }
+  }
+
+  function update(dt, t){
+    if(!running || paused) return;
+    // spawn
+    lastSpawn += dt*1000;
+    if(lastSpawn > spawnInterval){ lastSpawn = 0; spawn(); if(Math.random()<0.3) spawn(); }
+    // update enemies
+    for(const e of enemies) e.update(dt);
+    enemies = enemies.filter(e=>{
+      if(e.y > H + 80){ // reached bottom -> cost life
+        lives--; beep(180,0.12,0.08);
+        return false;
+      }
+      return !e.dead;
+    });
+    // bullets
+    for(const b of bullets) b.update(dt);
+    bullets = bullets.filter(b=>!b.dead);
+    // check typed buffer matching
+    if(typed.length>0){
+      // find candidate enemies whose next char equals first typed letter
+      const ch = typed.charAt(0).toUpperCase();
+      // pick the enemy closest to bottom (largest y) that needs this char
+      let target = null; let bestY = -Infinity;
+      for(const e of enemies){ if(e.nextChar()===ch){ if(e.y>bestY){ bestY=e.y; target=e; } } }
+      if(target){
+        // consume typed letters as long as they match
+        while(typed.length>0 && target.nextChar()===typed.charAt(0).toUpperCase()){
+          // type one char
+          target.progress++;
+          typed = typed.slice(1);
+          // visual bullet
+          bullets.push(new Bullet(W/2, H-40, target.x, target.y));
+          beep(750 + Math.random()*300, 0.03, 0.02);
+          if(target.progress >= target.word.length){
+            // destroyed
+            score += Math.floor(10*target.word.length + (H-target.y)/8);
+            target.dead = true;
+            beep(220,0.12,0.08);
+            break; // stop consuming on kill so player can choose next target
+          }
+        }
+      } else {
+        // typed char didn't match any enemy -> small penalty (clear buffer)
+        typed=''; beep(140,0.08,0.02);
+      }
+    }
+
+    // level up
+    advanceLevelIfNeeded();
+
+    // lose condition
+    if(lives<=0){ gameOver(); }
+
+    updateUI();
+  }
+
+  function draw(){
+    // background
+    ctx.clearRect(0,0,W,H);
+    // stars
+    for(let i=0;i<60;i++){
+      const x=(i*79) % W; const y=(i*113) % H; ctx.fillStyle='rgba(255,255,255,0.02)'; ctx.fillRect(x,y,1,1);
+    }
+
+    // draw enemies
+    for(const e of enemies) e.draw(ctx);
+
+    // draw bullets
+    for(const b of bullets) b.draw(ctx);
+
+    // bottom ship
+    const shipY = H-30;
+    ctx.save(); ctx.translate(W/2, shipY);
+    ctx.fillStyle='#9fb0ff'; ctx.beginPath(); ctx.moveTo(-26,14); ctx.lineTo(0,-18); ctx.lineTo(26,14); ctx.closePath(); ctx.fill(); ctx.restore();
+
+    // HUD typed buffer
+    ctx.textAlign='center'; ctx.font='20px monospace'; ctx.fillStyle='#9ff'; ctx.fillText(typed.toUpperCase(), W/2, H-8);
+
+    if(!running){
+      // title overlay
+      ctx.save(); ctx.fillStyle='rgba(2,6,10,0.6)'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='56px sans-serif'; ctx.fillText('AB-TYPE',W/2,H/2-70);
+      ctx.font='20px sans-serif'; ctx.fillText('A simple Z-Type style typing shooter', W/2, H/2-28);
+      ctx.font='16px sans-serif'; ctx.fillText('Type letters to shoot enemies. Press Start to begin.', W/2, H/2+6);
+      ctx.fillText('Highscore: '+(localStorage.getItem('abtype_highscore')||0), W/2, H/2+40);
+      ctx.restore();
+    }
+
+    if(paused && running){ ctx.save(); ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fillRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.font='40px sans-serif'; ctx.textAlign='center'; ctx.fillText('PAUSED', W/2, H/2); ctx.restore(); }
+  }
+
+  function loop(t){
+    if(!lastTime) lastTime = t; const dt = Math.min(0.05, (t-lastTime)/1000); lastTime = t;
+    update(dt, t);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // Input handling
+  addEventListener('keydown', (e)=>{
+    if(e.key.length===1 && !e.ctrlKey && !e.metaKey){ typed += e.key; e.preventDefault(); }
+    else if(e.key==='Backspace'){ typed = typed.slice(0,-1); }
+    else if(e.key==='Enter'){ paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; }
+  });
+
+  // Mobile input mirrors to typed
+  mobileInput.addEventListener('input', ()=>{ typed = mobileInput.value.toUpperCase(); });
+  mobileInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ mobileInput.blur(); } });
+
+  // Buttons
+  startBtn.addEventListener('click', ()=>{ resetGame(); running=true; paused=false; startBtn.textContent='Restart'; pauseBtn.textContent='Pause'; lastTime=0; });
+  pauseBtn.addEventListener('click', ()=>{ if(!running) return; paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; });
+
+  // Start animation loop
+  requestAnimationFrame(loop);
+
+  // Small tutorial: focus mobile input on touch
+  addEventListener('touchstart', ()=>{ if(window.innerWidth<700) mobileInput.focus(); }, {passive:true});
+
+  // Friendly note in console
+  console.log('AB-TYPE ready. Save this file as AB-TYPE.html and open it in a browser. Type to play.');
+})();
+</script>
+</body>
+</html>
